@@ -63,8 +63,14 @@ def select_all(table_name):
     objects=[]
     result=cursor.fetchall()
     if result:
+        ## replace the object with a deserialized one 
+        
         for i in result:
-            objects.append(deserialize_object(i[2]))
+            row=[]
+            row.append(i[0])
+            row.append(deserialize_object(i[2]))
+            objects.append(row)
+        
     return objects
 
 
