@@ -24,9 +24,9 @@ habits=select_all('habits')
 nav = dbc.Nav(
     [
         dbc.NavLink("Analyse", active=True , style={"marginRight": "100px"},className="text-primary",id='analyse'),
-        dbc.NavLink("Add Habit" , style={"marginRight": "100px"},className="text-success",id='add_habit'),
-        dbc.NavLink("Delete" , style={"marginRight": "100px"},className="text-danger",id='delete'),
+        dbc.NavLink("Add Habit" , style={"marginRight": "100px"},className="text-success",id='add_habit'),  
         dbc.NavLink("More", style={"marginRight": "100px"},className="text-info"),
+        dbc.NavLink("Delete" , style={"marginRight": "100px"},className="text-danger",id='delete'),
     ]
 )
 ##TABLE JUST FOR TESTING PEPURSES 
@@ -42,21 +42,24 @@ for i in habits:
 
 #for a dropdown of habits to be shown when delete is pressed 
 
-options = dcc.Dropdown(
-        id='my-select',
-        options=[
-            {'label': 'Option 1', 'value': 'option1'},
-            {'label': 'Option 2', 'value': 'option2'},
-            {'label': 'Option 3', 'value': 'option3'}
-        ],
-        value='option1'  # Default value
-    )
 
 
 
-delete=[]
+
+delete_options=[]
 for i in habits:
-    delete.append(i[1].name)
+    row={'label':i[1].name, 'value': i[1].name}
+    delete_options.append(row)
+
+## the delete options 
+options = dcc.Dropdown(
+        delete_options,
+        
+        id='my-select',
+        value='running',
+        searchable=True
+        ,style={'width':"30%"} # Default value
+    )
 
 table_body = [html.Tbody(rows)]
 
@@ -84,7 +87,13 @@ app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = dbc.Container(children=[html.H1('Habit App',style={"textAlign":"center"}, className="text-primary"),
                                    dbc.Col(   nav , class_name="d-flex justify-content-center"),
-                     html.Div(form,id="form",n_clicks=0),options  ,html.Div(id="form_message1"),html.Div(id="form_message"),html.Div(table,id='table',n_clicks=0)])
+                     html.Div(form,id="form",n_clicks=0),
+                     html.Div(id="form_message"),html.Div(table,id='table',n_clicks=0),
+                      html.Div(options,id='my_select_container'),html.Div(id="form_message1"),
+                    
+                     ]),
+
+
 
 @callback(
     Output('form_message', 'children'),
@@ -134,13 +143,32 @@ def show_form(n_clicks):
     else:
         return {'display': 'none'}
 
+## to only show the drop down when the delete is pressed
+@callback(
+    Output('my_select_container', 'style'),
+    Input('delete', 'n_clicks'),)
+
+def show_form(n_clicks):
+    if n_clicks is None:
+    #if n_clicks==0:
+        return {'display': 'none'}
+    
+   
+        
+    if n_clicks % 2 == 1: 
+        return {'display': 'flex', 'justifyContent': 'flex-end','marginRight': '40px'}
+    else:
+        return {'display': 'none'}
+
 ##call back for the drop down on delete
 @callback(
     Output('form_message1', 'children'),
     Input('my-select', 'value'),)
 
 def show_selected(children):
-    return children
+    if children:
+        a=delete_habit_from_database(children)
+        return a
 
 
 

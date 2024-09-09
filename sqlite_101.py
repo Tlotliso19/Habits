@@ -52,7 +52,8 @@ def delete_habit_from_database(name):
     cursor=conn.cursor()
     cursor.execute("DELETE FROM habits where name = ?",(name,))
     conn.commit()
-    print(f"habit:{name}, is deleted from our records " )
+    if not None:
+        return f"habit:{name}, is deleted from our records " 
 
 
 # to handle selecting all objects from the database 
