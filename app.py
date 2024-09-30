@@ -143,7 +143,7 @@ app.layout = dbc.Container(children=[html.H1('Habit App',style={"textAlign":"cen
                      html.Div(id="form_message"),html.Div(table,id='table',n_clicks=0),
                       html.Div(options,id='my_select_container'),html.Div(id="form_message1"),
                      html.Div(dbc.Col(daily_tasks,class_name="d-flex justify-content-center"),id="daily_tasks"),
-                      html.Div(id="habit analysis"),dcc.Graph(id="graph")
+                      html.Div(id="habit analysis",style={'display': 'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px', 'padding': '20px'})
                     
                      ]),
 
@@ -256,13 +256,33 @@ def show_selected(value):
         return a
 
 ##callback to deal with the plotting 
-@callback(Output("graph","figure"),Input("names","value"))
+@callback(Output("habit analysis","children"),Input("names","value"))
 
 def plot_habits(value):
-    labels = ['Oxygen','Hydrogen','Carbon_Dioxide','Nitrogen']
-    values = [4500, 2500, 1053, 500]
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-    return fig
+    habits=[]
+    if value == 'Good Habits':
+        habits=select_all('good_habits')
+    elif value == 'Bad Habits':
+        habits=select_all('bad_habits')
+    elif value == 'All':
+        good_habits=select_all('bad_habits')
+        bad_habits=select_all('good_habits')
+        habits=bad_habits + good_habits
+    graphs=[]
+    for i in habits:
+        colors=[]
+        values=i[1].display_data()
+        labels=['current','target']
+        if isinstance (i[1],Good_habits_101):
+            colors = ['#d62728', '#ffbb78']
+        else:
+            colors = ['#1f77b4', '#ff7f0e']
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.8, marker=dict(colors=colors))])
+        fig.update_layout( 
+             annotations=[
+                dict(text=i[1].name,font_size=20,showarrow=False)])
+        graphs.append(dcc.Graph(figure=fig))
+    return graphs
 
 
 
