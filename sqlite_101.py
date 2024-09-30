@@ -15,7 +15,14 @@ def database_connect():
 
     # Create a table to store serialized objects
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS habits (
+    CREATE TABLE IF NOT EXISTS good_habits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE,
+        object BLOB
+               
+    )''')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS bad_habits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE,
         object BLOB
@@ -26,18 +33,18 @@ def database_connect():
 '''functions to load the data to and from the database'''
 
 
-def save_object_to_db(obj):
+def save_object_to_db(obj,table):
     conn = sqlite3.connect('my_database.db')
     cursor = conn.cursor()
     name=obj.name #for easy of seaching of habits in the database 
     serialized_data = serialize_object(obj)
-    cursor.execute('INSERT OR REPLACE INTO habits (name,object) VALUES (?,?)', (name,serialized_data,))
+    cursor.execute(f'INSERT OR REPLACE INTO {table} (name,object) VALUES (?,?)', (name,serialized_data,))
     conn.commit()
 
-def load_object_from_db1(name):
+def load_object_from_db1(name,table):
     conn = sqlite3.connect('my_database.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM habits WHERE name = ?",(name,))
+    cursor.execute(f"SELECT * FROM {table} WHERE name = ?",(name,))
     result = cursor.fetchone()
     if result:
         #print(result)
@@ -47,10 +54,10 @@ def load_object_from_db1(name):
     return None
 
 ## to handle the deleting of habits from out database
-def delete_habit_from_database(name):
+def delete_habit_from_database(name,table):
     conn= sqlite3.connect('my_database.db')
     cursor=conn.cursor()
-    cursor.execute("DELETE FROM habits where name = ?",(name,))
+    cursor.execute(f"DELETE FROM {table} where name = ?",(name,))
     conn.commit()
     if not None:
         return f"habit:{name}, is deleted from our records " 

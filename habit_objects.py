@@ -32,8 +32,14 @@ class Habits_101:
     highest_streaks = {}
 
     def __init__(self, name, frequency):
-        self.name = name
-        self.frequency = frequency
+        if name:
+            self.name = name
+        else:
+            raise ValueError("ENTER A VALID NAME ")
+        try:
+            self.frequency = int(frequency)
+        except ValueError:
+            raise ValueError("FREQUENCY MUST BE AN INTEGER")
         self.streak = 0
 
     def __repr__(self):
@@ -129,10 +135,12 @@ class Good_habits_101(Habits_101):
         self.__class__.streaks_times[self.name] = current_time    
         if last_streak_time is None: #then valid    
             return True
+            #return False
         # If last performance was within the allowed frequency
-        time_defference =(current_time - last_streak_time) < timedelta(days=self.frequency)
+        time_defference =(current_time - last_streak_time) < timedelta(days=int(self.frequency))
         if time_defference:
             return True
+            #return False
         
         return False
     

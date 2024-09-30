@@ -1,5 +1,7 @@
 from dash import Dash, dash,dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
+import plotly.express as px
+import plotly.graph_objects as go
 
 """ modules to help with objects and sql operations """
 ##important modules 
@@ -17,15 +19,19 @@ from sqlite_101 import database_connect,save_object_to_db,load_object_from_db1,d
 '''connect to the database'''
 database_connect()
 
-habits=select_all('habits')
+habits=select_all('bad_habits')
 ## NAVBAR 
 
 
 nav = dbc.Nav(
-    [
+    [    dbc.NavLink(dcc.Dropdown(id='names',
+        options=['Good Habits', 'Bad Habits','All'],
+        value='All', clearable=False,style={"marginRight": "100px","width":"200px"},className="text-primary"
+    )),
         dbc.NavLink("Analyse", active=True , style={"marginRight": "100px"},className="text-primary",id='analyse'),
         dbc.NavLink("Add Habit" , style={"marginRight": "100px"},className="text-success",id='add_habit'),  
         dbc.NavLink("More", style={"marginRight": "100px"},className="text-info"),
+        dbc.NavLink("Daily tasks", style={"marginRight": "100px"},className="text-info",id="daily"),
         dbc.NavLink("Delete" , style={"marginRight": "100px"},className="text-danger",id='delete'),
     ]
 )
@@ -50,6 +56,44 @@ delete_options=[]
 for i in habits:
     row={'label':i[1].name, 'value': i[1].name}
     delete_options.append(row)
+
+
+""" for the daily taks """
+task_rows=[]
+for i in habits:
+    if i[1].performed() !=True:
+        task_row= dbc.Row([dbc.Col(
+            dbc.Label(i[1].name, width="auto")),
+            dbc.Col(
+            dbc.Label(str(i[1].performed()), width="auto")),
+        
+            dbc.Col(dbc.Button("Complete", color="primary",active=True), width="auto",), ] ,
+         className="g-2",style={"marginBottom": "20px"})
+        task_rows.append(task_row)
+    else:
+        task_row= dbc.Row([dbc.Col(
+            dbc.Label(i[1].name, width="auto")),
+            dbc.Col(
+            dbc.Label(str(i[1].performed()), width="auto")),
+        
+            dbc.Col(dbc.Button("Done", color="primary",active=False), width="auto",), ] ,
+         className="g-2",style={"marginBottom": "20px"})
+        task_rows.append(task_row)
+   
+
+    
+
+
+
+
+daily_tasks = dbc.Form( task_rows,style={"width":"40%" })
+
+
+
+
+
+
+
 
 ## the delete options 
 options = dcc.Dropdown(
@@ -77,7 +121,15 @@ form = dbc.Row([
             type="text",
             id="habit_frequency",
             placeholder="Habit frequency")],className="me-3"),
-
+dbc.Col(  dcc.RadioItems(
+        id='radio-buttons',
+        options=[
+            {'label': 'Good Habit', 'value': 'good_habit'},
+            {'label': 'Bad Habit', 'value': 'bad_habit'}
+        ],
+        value='option1',  # Default value
+        labelStyle={'display': 'block'}  # Display each radio button on a new line
+    ),),
             dbc.Col(dbc.Button("Submit",id="submit_btn", color="primary"), width="auto"),
 
     
@@ -90,26 +142,37 @@ app.layout = dbc.Container(children=[html.H1('Habit App',style={"textAlign":"cen
                      html.Div(form,id="form",n_clicks=0),
                      html.Div(id="form_message"),html.Div(table,id='table',n_clicks=0),
                       html.Div(options,id='my_select_container'),html.Div(id="form_message1"),
+                     html.Div(dbc.Col(daily_tasks,class_name="d-flex justify-content-center"),id="daily_tasks"),
+                      html.Div(id="habit analysis"),dcc.Graph(id="graph")
                     
                      ]),
 
 
-
+##to collect the habit data into the database
 @callback(
     Output('form_message', 'children'),
     Input('submit_btn', 'n_clicks'),
+    Input('radio-buttons', 'value'),
     State('habit_name', 'value'),
     State('habit_frequency', 'value'),
    
 )
-def collect_habits(n_clicks,name,frequency):
-    if n_clicks:
-        if name and frequency:
-            a=Good_habits_101(name,frequency)
-            save_object_to_db(a)
+def collect_habits(n_clicks,value,name,frequency):
+    if value =="good_habit":
+        if n_clicks:
+            if name and frequency:
+                a=Good_habits_101(name,frequency)
+                save_object_to_db(a,'good_habits')
 
-        return "habit saved good luck"
-    
+            return "habit saved good luck"
+    else:
+        if n_clicks:
+            if name and frequency:
+                a=Good_habits_101(name,frequency)
+                save_object_to_db(a,'bad_habits')
+
+            return "habit saved good luck"
+##show and hide the table   
 @callback(
     Output('table', 'style'),
     Input('analyse', 'n_clicks'),)
@@ -126,7 +189,7 @@ def show_table(n_clicks):
     else:
         return {'display': 'none'}
         
-
+##show the form and hide it 
 @callback(
     Output('form', 'style'),
     Input('add_habit', 'n_clicks'),)
@@ -159,16 +222,47 @@ def show_form(n_clicks):
         return {'display': 'flex', 'justifyContent': 'flex-end','marginRight': '40px'}
     else:
         return {'display': 'none'}
+    
+    ## to only show the daily tasks when daily habit button is clicked 
+
+  
+
+@callback(
+    Output('daily_tasks', 'style'),
+    Input('daily', 'n_clicks'),)
+
+def show_form(n_clicks):
+    if n_clicks is None:
+    #if n_clicks==0:
+        return {'display': 'none'}
+    
+   
+        
+    if n_clicks % 2 == 1: 
+        return {'display': 'flex', 'justifyContent': 'flex-end','marginRight': '40px'}
+    else:
+        return {'display': 'none'}
+
+
 
 ##call back for the drop down on delete
 @callback(
     Output('form_message1', 'children'),
     Input('my-select', 'value'),)
 
-def show_selected(children):
-    if children:
-        a=delete_habit_from_database(children)
+def show_selected(value):
+    if value:
+        a=delete_habit_from_database(value,'good_habits')
         return a
+
+##callback to deal with the plotting 
+@callback(Output("graph","figure"),Input("names","value"))
+
+def plot_habits(value):
+    labels = ['Oxygen','Hydrogen','Carbon_Dioxide','Nitrogen']
+    values = [4500, 2500, 1053, 500]
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+    return fig
 
 
 
