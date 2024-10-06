@@ -113,7 +113,8 @@ class Good_habits_101(Habits_101):
             print(f"Habit '{self.name}' was not performed within the allowed frequency.")
 
     def display_data(self): #for vidualizing 
-        target = self.num_days / self.frequency
+        #target = self.num_days / self.frequency
+        target=self.frequency
         current = self.streak
         return current, target
 
@@ -127,6 +128,62 @@ class Good_habits_101(Habits_101):
           self.streak += 0  
 
     def performed(self):
+        if self.streak==0:
+            return False
+       
+        current_time = datetime.now()
+        last_streak_time = self.__class__.streaks_times.get(self.name, None)
+
+        # Update the last performed time weather it is performed all not 
+        self.__class__.streaks_times[self.name] = current_time    
+        if last_streak_time is None: #then valid    
+            return True
+            #return False
+        # If last performance was within the allowed frequency
+        time_defference =(current_time - last_streak_time) < timedelta(days=int(self.frequency))
+        if time_defference:
+            return True
+            #return False
+        
+        return False
+    
+'''bad habit class to deal with bad habits '''
+class bad_habits_101(Habits_101):
+    streaks_times = {}
+
+    def __init__(self, name, frequency):
+        super().__init__(name, frequency)
+        self.year = datetime.now().year #keeping track of time 
+        self.month = datetime.now().month
+        self.num_days = calendar.monthrange(self.year, self.month)[1]
+        if name not in self.__class__.streaks_times:
+            self.__class__.streaks_times[name] = None #adding it to the dictionery if it is not present at initialiazation
+
+    def perform(self): #when we perform the habit
+        if self.performed():
+            self.update_streak()
+            print(f"Habit '{self.name}' performed successfully. Streak updated.")
+        else:
+            print(f"Habit '{self.name}' was not performed within the allowed frequency.")
+
+    def display_data(self): #for vidualizing 
+        #target = self.num_days / self.frequency
+        target=self.frequency
+        current = self.streak
+        return current, target
+
+    def update_streak(self):
+        if self.performed():
+
+            self.streak += 1 #updating the streak
+            print('has been run 1')
+        else:
+          print('has been run 2')
+          self.streak += 0  
+
+    def performed(self):
+        if self.streak==0:
+            return False
        
         current_time = datetime.now()
         last_streak_time = self.__class__.streaks_times.get(self.name, None)

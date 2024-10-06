@@ -12,14 +12,40 @@ import pickle # for serialization
 
 """ modules for objects and functions for sqlite """
 #importing of objects 
-from habit_objects import Habits_101,Good_habits_101,serialize_object,deserialize_object
+from habit_objects import Habits_101,Good_habits_101,serialize_object,deserialize_object,bad_habits_101
 
 #importing of functions 
 from sqlite_101 import database_connect,save_object_to_db,load_object_from_db1,delete_habit_from_database,select_all
 '''connect to the database'''
 database_connect()
 
-habits=select_all('bad_habits')
+habits=select_all('bad_habits')+select_all('good_habits')
+
+##progress bar 
+progress_bars=[]
+progress_btn=[]
+for i in habits:
+    color=''
+    if isinstance(i[1],Good_habits_101):
+        color='info'
+    else:
+        color='danger'
+    values=i[1].display_data()
+    value=values[0]+2/values[1]*100
+    label=i[1].name
+    buttom=dbc.Button(label)
+    progress = dbc.Progress(label=label, value=value,color=color,
+                            style={"height": "20px","width": "60%","contentJustify": "center"}, className="mb-3")
+    progress_bars.append(progress)
+    progress_btn.append(buttom)
+
+##progress bar and buttom
+components=[]
+for i in range(len(progress_bars)):
+    component=[progress_bars[i],progress_btn[i]]
+    components.append(component)
+
+
 ## NAVBAR 
 
 
@@ -142,12 +168,14 @@ app.layout = dbc.Container(children=[html.H1('Habit App',style={"textAlign":"cen
                      html.Div(form,id="form",n_clicks=0),
                      html.Div(id="form_message"),html.Div(table,id='table',n_clicks=0),
                       html.Div(options,id='my_select_container'),html.Div(id="form_message1"),
-                     html.Div(dbc.Col(daily_tasks,class_name="d-flex justify-content-center"),id="daily_tasks"),
-                      html.Div(id="habit analysis",style={'display': 'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px', 'padding': '20px'})
+                     html.Div(components,id="daily_tasks"),
+                      html.Div(id="habit analysis",
+                               style={'display': 'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px', 'padding': '20px'})
+                              
                     
                      ]),
 
-
+print(components)
 ##to collect the habit data into the database
 @callback(
     Output('form_message', 'children'),
@@ -168,7 +196,7 @@ def collect_habits(n_clicks,value,name,frequency):
     else:
         if n_clicks:
             if name and frequency:
-                a=Good_habits_101(name,frequency)
+                a=bad_habits_101(name,frequency)
                 save_object_to_db(a,'bad_habits')
 
             return "habit saved good luck"
@@ -239,7 +267,7 @@ def show_form(n_clicks):
    
         
     if n_clicks % 2 == 1: 
-        return {'display': 'flex', 'justifyContent': 'flex-end','marginRight': '40px'}
+        return {'display': 'block', 'justifyContent': 'center','marginRight': 'auto','marginLeft': '90px'}
     else:
         return {'display': 'none'}
 
@@ -253,7 +281,9 @@ def show_form(n_clicks):
 def show_selected(value):
     if value:
         a=delete_habit_from_database(value,'good_habits')
+        a=delete_habit_from_database(value,'bad_habits')
         return a
+       
 
 ##callback to deal with the plotting 
 @callback(Output("habit analysis","children"),Input("names","value"))
