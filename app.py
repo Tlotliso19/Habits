@@ -15,7 +15,7 @@ import pickle # for serialization
 from habit_objects import Habits_101,Good_habits_101,serialize_object,deserialize_object,bad_habits_101
 
 #importing of functions 
-from sqlite_101 import database_connect,save_object_to_db,load_object_from_db1,delete_habit_from_database,select_all
+from sqlite_101 import database_connect,save_object_to_db,load_object_from_db1,delete_habit_from_database,select_all,update_habit
 '''connect to the database'''
 database_connect()
 
@@ -24,25 +24,27 @@ habits=select_all('bad_habits')+select_all('good_habits')
 ##progress bar 
 progress_bars=[]
 progress_btn=[]
+labels=[]
 for i in habits:
     color=''
     if isinstance(i[1],Good_habits_101):
-        color='info'
+        color='blue'
     else:
-        color='danger'
+        color='red'
     values=i[1].display_data()
     value=values[0]+2/values[1]*100
     label=i[1].name
-    buttom=dbc.Button(label)
+    labels.append(label)
+    buttom=dbc.Button(label,style={'height':'30px','display':'inline','backgroundColor':color},id=label) #,color=color
     progress = dbc.Progress(label=label, value=value,color=color,
-                            style={"height": "20px","width": "60%","contentJustify": "center"}, className="mb-3")
+                            style={"height": "30px","width": "90%","contentJustify": "center"}, className="mb-3")
     progress_bars.append(progress)
     progress_btn.append(buttom)
 
 ##progress bar and buttom
 components=[]
 for i in range(len(progress_bars)):
-    component=[progress_bars[i],progress_btn[i]]
+    component=html.Div([progress_bars[i],progress_btn[i]],style={'display':'grid','gridTemplateColumns':'5fr 1fr'})
     components.append(component)
 
 
@@ -87,24 +89,25 @@ for i in habits:
 """ for the daily taks """
 task_rows=[]
 for i in habits:
-    if i[1].performed() !=True:
-        task_row= dbc.Row([dbc.Col(
-            dbc.Label(i[1].name, width="auto")),
-            dbc.Col(
-            dbc.Label(str(i[1].performed()), width="auto")),
+    if i:
+        if i[1].performed() !=True:
+            task_row= dbc.Row([dbc.Col(
+                dbc.Label(i[1].name, width="auto")),
+                dbc.Col(
+                dbc.Label(str(i[1].performed()), width="auto")),
         
-            dbc.Col(dbc.Button("Complete", color="primary",active=True), width="auto",), ] ,
-         className="g-2",style={"marginBottom": "20px"})
-        task_rows.append(task_row)
-    else:
-        task_row= dbc.Row([dbc.Col(
-            dbc.Label(i[1].name, width="auto")),
-            dbc.Col(
-            dbc.Label(str(i[1].performed()), width="auto")),
+                dbc.Col(dbc.Button("Complete", color="primary",active=True), width="auto",), ] ,
+            className="g-2",style={"marginBottom": "20px"})
+            task_rows.append(task_row)
+        else:
+            task_row= dbc.Row([dbc.Col(
+                dbc.Label(i[1].name, width="auto")),
+                dbc.Col(
+                dbc.Label(str(i[1].performed()), width="auto")),
         
-            dbc.Col(dbc.Button("Done", color="primary",active=False), width="auto",), ] ,
-         className="g-2",style={"marginBottom": "20px"})
-        task_rows.append(task_row)
+                dbc.Col(dbc.Button("Done", color="primary",active=False), width="auto",), ] ,
+                className="g-2",style={"marginBottom": "20px"})
+            task_rows.append(task_row)
    
 
     
@@ -168,14 +171,15 @@ app.layout = dbc.Container(children=[html.H1('Habit App',style={"textAlign":"cen
                      html.Div(form,id="form",n_clicks=0),
                      html.Div(id="form_message"),html.Div(table,id='table',n_clicks=0),
                       html.Div(options,id='my_select_container'),html.Div(id="form_message1"),
-                     html.Div(components,id="daily_tasks"),
+                     html.Div(components,id="daily_tasks"),html.Div(id='update-habit-output'),
                       html.Div(id="habit analysis",
                                style={'display': 'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px', 'padding': '20px'})
+                        
                               
                     
                      ]),
 
-print(components)
+
 ##to collect the habit data into the database
 @callback(
     Output('form_message', 'children'),
@@ -302,6 +306,7 @@ def plot_habits(value):
     for i in habits:
         colors=[]
         values=i[1].display_data()
+        values=(3,67)
         labels=['current','target']
         if isinstance (i[1],Good_habits_101):
             colors = ['#d62728', '#ffbb78']
@@ -313,6 +318,41 @@ def plot_habits(value):
                 dict(text=i[1].name,font_size=20,showarrow=False)])
         graphs.append(dcc.Graph(figure=fig))
     return graphs
+
+
+@app.callback(
+    Output('update-habit-output', 'children'),
+    [Input(f'{i}', 'n_clicks') for i in labels] 
+    , [State(label, 'style') for label in labels]
+)
+def update_output(*args):
+    # Determine which button was clicked
+    n_clicks = args[:len(labels)]
+    styles = args[len(labels):]
+    #print(styles)
+    for i, click_count in enumerate(n_clicks ):
+    
+        if click_count is not None:
+            #habit_object=load_object_from_db1(labels[i],'bad_habits')
+            
+            #color1 = styles[i]['KeyError: 'backgroundColor'']
+            color = styles[i].get('backgroundColor','unknown')
+            if color =='red' and n_clicks!=0:
+                
+                habit_object=load_object_from_db1(format(labels[i]),'bad_habits')
+                if isinstance (habit_object,bad_habits_101):
+                    performed_habit=habit_object.perform()
+                    update_habit(labels[i],performed_habit,'bad_habits')
+                #return f'You clicked {labels[i]} {n_clicks} times! which is number {color} in color'
+                    print(habit_object)
+            else: 
+                
+                habit_object=load_object_from_db1(labels[i],'good_habits')
+                if isinstance(habit_object,Good_habits_101):
+                    performed_habit=habit_object.perform()
+                    update_habit(labels[i],performed_habit,'good_habits')
+                    print(habit_object)
+    return 'Click a button!'
 
 
 

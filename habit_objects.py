@@ -125,11 +125,11 @@ class Good_habits_101(Habits_101):
             print('has been run 1')
         else:
           print('has been run 2')
-          self.streak += 0  
+          self.streak = 0  
 
     def performed(self):
         if self.streak==0:
-            return False
+            return True
        
         current_time = datetime.now()
         last_streak_time = self.__class__.streaks_times.get(self.name, None)
@@ -183,7 +183,7 @@ class bad_habits_101(Habits_101):
 
     def performed(self):
         if self.streak==0:
-            return False
+            return True
        
         current_time = datetime.now()
         last_streak_time = self.__class__.streaks_times.get(self.name, None)

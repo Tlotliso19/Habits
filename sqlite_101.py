@@ -80,6 +80,14 @@ def select_all(table_name):
             objects.append(row)
         
     return objects
+def update_habit(habit_name,habit_object,table_name):
+    conn= sqlite3.connect('my_database.db')
+    cursor=conn.cursor()
+    update_query = f"UPDATE {table_name} SET object = ? WHERE name = ?"
+    data = (serialize_object(habit_object), habit_name) #updating the object column 
+    cursor.execute(update_query, data)
+    conn.commit()
+
 
 
 '''functions to serialize the data and deserialize the data'''
@@ -88,3 +96,13 @@ def serialize_object(obj):
 
 def deserialize_object(serialized_data):
     return pickle.loads(serialized_data)
+
+'''funtion to truncate the table '''
+def truncate(TABLE):
+    conn = sqlite3.connect('my_database.db')
+    cursor = conn.cursor()
+
+    
+    cursor.execute(f'DELETE FROM {TABLE}')
+    
+    conn.commit()
