@@ -148,7 +148,7 @@ class Good_habits_101(Habits_101):
         return False
     
 '''bad habit class to deal with bad habits '''
-class bad_habits_101(Habits_101):
+class Bad_habits_101(Habits_101):
     streaks_times = {}
 
     def __init__(self, name, frequency):

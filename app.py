@@ -12,7 +12,7 @@ import pickle # for serialization
 
 """ modules for objects and functions for sqlite """
 #importing of objects 
-from habit_objects import Habits_101,Good_habits_101,serialize_object,deserialize_object,bad_habits_101
+from habit_objects import Habits_101,Good_habits_101,serialize_object,deserialize_object,Bad_habits_101
 
 #importing of functions 
 from sqlite_101 import database_connect,save_object_to_db,load_object_from_db1,delete_habit_from_database,select_all,update_habit
@@ -200,7 +200,7 @@ def collect_habits(n_clicks,value,name,frequency):
     else:
         if n_clicks:
             if name and frequency:
-                a=bad_habits_101(name,frequency)
+                a=Bad_habits_101(name,frequency)
                 save_object_to_db(a,'bad_habits')
 
             return "habit saved good luck"
